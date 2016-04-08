@@ -23,8 +23,18 @@ function newMessage(command_, sequence_number_, session_id_) {
 // Encodes a p0p message with fields magic, version, command, sequence number, 
 // and session id.
 module.exports.messageEncode = messageEncode;
-function messageEncode(o) {
+function messageEncode(msg) {
+	var msgarr = [];
 
+	var endianness = os.endianness();
+	if (endianness == "BE") {
+		//just push everything onto the array.
+		//msgarr.push(msg.magic)
+	} else {
+		//reverse order of bytes for each component
+	}
+	
+	return msgarr;
 }
 
 // Returns a random 32 bit unsigned int to use as a session id.
