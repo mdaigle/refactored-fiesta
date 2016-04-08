@@ -14,7 +14,10 @@ const DGRAM = require('dgram');
 const SOCKET = DGRAM.createSocket('udp4');
 
 // Set a timeout of 20 seconds.
-var timer = setTimeout(/*timeout callback*/, 20000)
+//var timer = setTimeout(/*timeout callback*/, 20000)
+
+var message = protocol.newMessage(protocol.HELLO, 1, SESSIONID);
+var buf = protocol.encodeMessage(message);
 
 // Client state constants.
 const HELLOWAIT = 0;

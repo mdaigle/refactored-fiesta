@@ -22,19 +22,21 @@ function newMessage(command_, sequence_number_, session_id_) {
 
 // Encodes a p0p message with fields magic, version, command, sequence number, 
 // and session id.
-module.exports.messageEncode = messageEncode;
-function messageEncode(msg) {
-	var msgarr = [];
+module.exports.encodeMessage = encodeMessage;
+function encodeMessage(msg) {
+	//TODO: correct buffer size?
+	var buf = new Buffer(512);
 
-	var endianness = os.endianness();
-	if (endianness == "BE") {
-		//just push everything onto the array.
-		//msgarr.push(msg.magic)
-	} else {
-		//reverse order of bytes for each component
-	}
-	
-	return msgarr;
+	buf.writeUInt16BE(msg.magic, 0);
+	buf.writeUInt8(msg.version, 2);
+	buf.writeUInt8(msg.command, 3);
+	buf.writeUInt32BE(msg.sequence_number, 4);
+	buf.writeUInt32BE(msg.session_id, 8);
+
+	//TODO: Change hard-coded 12 to account for length of data
+	var trimmed = buf.slice(0, 12)
+	console.log(trimmed);
+	return buf;
 }
 
 // Returns a random 32 bit unsigned int to use as a session id.
