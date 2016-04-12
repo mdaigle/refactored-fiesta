@@ -11,8 +11,15 @@ const ALIVE = 2;
 const GOODBYE = 3;
 
 // Protocol header constants.
-const MAGIC = 0xC461;
+const MAGIC = 50273; // 0xC461
 const VERSION = 1;
+
+exports.HELLO = HELLO;
+exports.DATA = DATA;
+exports.ALIVE = ALIVE;
+exports.GOODBYE = GOODBYE;
+exports.MAGIC = MAGIC;
+exports.VERSION = VERSION;
 
 module.exports.newMessage = newMessage;
 function newMessage(command_, sequence_number_, session_id_) {
@@ -40,7 +47,6 @@ function encodeMessage(msg) {
 
 	//TODO: Change hard-coded 12 to account for length of data
 	var trimmed = buf.slice(0, 12)
-	console.log(trimmed);
 	return buf;
 }
 

@@ -11,13 +11,10 @@ const SOCKET = DGRAM.createSocket('udp4');
 
 // Create a session id to use for all communications with the server.
 const SESSIONID = protocol.makeSessionId();
-console.log("New session with id %d", SESSIONID);
+//console.log("New session with id %d", SESSIONID);
 
 // Sequence number, incremented for each message sent.
 var seq_num = 0;
-
-// Set a timeout of 20 seconds.
-//var timer = setTimeout(/*timeout callback*/, 20000)
 
 var message = protocol.newMessage(protocol.HELLO, 0, SESSIONID);
 var buf = protocol.encodeMessage(message);
@@ -29,53 +26,58 @@ const READYTIMER = 2;
 const CLOSING = 3;
 const CLOSED = 4;
 
-var clientstate = -1;
-
 //Send initial HELLO message to server, then enter HELLOWAIT state
-SOCKET.send(buf, args[1], args[0], (err) => {
-	console.log("sent hello message")
-});
+SOCKET.send(buf, args[1], args[0]);
 
-clientstate = HELLOWAIT;
+timer = setTimeout(function() {
+	timeout("hello");
+}, 5000);
+
+var clientstate = HELLOWAIT;
 
 // SOCKET EVENT BINDINGS
 // -------------------------------------------------------------------------- //
 SOCKET.on('message', (buf, rinfo) => {
 	console.log('Received %d bytes from %s:%d\n', 
 		buf.length, rinfo.address, rinfo.port);
-	var message = decodeMessage(buf, rinfo);
+	var message = protocol.decodeMessage(buf, rinfo);
 
 	// Validate message
 	if (message.magic != protocol.MAGIC) {
+		console.log("magic value was bad", message.magic, protocol.MAGIC);
 		return;
 	}
 
-	// If the message is a GOODBYE, exit immediately
+	// If the message is a GOODBYE, exit immediately, no matter the current 
+	// state
 	if (message.command == protocol.GOODBYE) {
+		SOCKET.close();
 		process.exit(0);
 	}
 
 	switch(clientstate) {
 		case HELLOWAIT:
 			if (message.command != protocol.HELLO) {
-				//ERROR we received something before an initial HELLO response
-				// quit
+				SOCKET.close();
 				process.exit(1);
 			}
+			clearTimeout(timer);
 			clientstate = READY;
-			//TODO: cancel timer
+			rl.resume();
 			break;
 		case READY:
 			break;
 		case READYTIMER:
 			if (message.command != protocol.ALIVE) {
+				SOCKET.close();
 				process.exit(1);
 			}
+			clearTimeout(timer);
 			clientstate = READY;
-			//TODO: cancel timer
 			break;
 		case CLOSING:
 			if (message.command != protocol.ALIVE) {
+				SOCKET.close();
 				process.exit(1);
 			}
 	}
@@ -85,21 +87,60 @@ SOCKET.on('message', (buf, rinfo) => {
 // -------------------------------------------------------------------------- //
 const readline = require('readline');
 const rl = readline.createInterface(process.stdin, process.stdout);
+rl.pause();
 
 rl.on('line', (line) => {
-	//check connection state
-	//break apart if too long and send to server with header.
+	if (clientstate != READY && clientstate != READYTIMER) {
+		return;
+	}
+
+	if (line == "q") {
+		sendGoodbyeMsg();
+	}
+
+	//TODO: chunk line
+	//TODO: for each chunk, send DATA message
+
+	if (clientstate == READY) {
+		clientstate = READYTIMER;
+		timer = setTimeout(function() {
+			timeout();
+		}, 5000);
+	}
 });
 
 rl.on('close', () => {
-  console.log('Have a great day!');
-  process.exit(0);
+	sendGoodbyeMsg();
 });
+
+function sendGoodbyeMsg() {
+	message = protocol.newMessage(protocol.GOODBYE, seq_num++, SESSIONID);
+	buf = protocol.encodeMessage(message);
+	SOCKET.send(buf, args[1], args[0]);
+
+	timer = setTimeout(function() {
+			timeout();
+		}, 5000);
+	clientstate = CLOSING;
+}
 
 // TIMER CALLBACK
 // -------------------------------------------------------------------------- //
 function timeout() {
-	// if not closing, set to closing
-	// if closing, set to closed
-	// send GOODBYE message
+
+	if (clientstate == CLOSING) {
+		SOCKET.close();
+		process.exit(1);
+	}
+
+	clientstate = CLOSING;
+	
+	message = protocol.newMessage(protocol.GOODBYE, seq_num++, SESSIONID);
+	buf = protocol.encodeMessage(message);
+	SOCKET.send(buf, args[1], args[0]);
+
+	timer = setTimeout(function() {
+		timeout();
+	}, 5000);
+	return;
 }
