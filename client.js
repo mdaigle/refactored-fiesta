@@ -44,15 +44,40 @@ SOCKET.on('message', (buf, rinfo) => {
 	console.log('Received %d bytes from %s:%d\n', 
 		buf.length, rinfo.address, rinfo.port);
 	var message = decodeMessage(buf, rinfo);
+
+	// Validate message
+	if (message.magic != protocol.MAGIC) {
+		return;
+	}
+
+	// If the message is a GOODBYE, exit immediately
+	if (message.command == protocol.GOODBYE) {
+		process.exit(0);
+	}
+
 	switch(clientstate) {
 		case HELLOWAIT:
-		//make sure its a HELLO message
+			if (message.command != protocol.HELLO) {
+				//ERROR we received something before an initial HELLO response
+				// quit
+				process.exit(1);
+			}
+			clientstate = READY;
+			//TODO: cancel timer
+			break;
 		case READY:
-		//make sure its a ALIVE message
+			break;
 		case READYTIMER:
-		//make sure its a ALIVE message
+			if (message.command != protocol.ALIVE) {
+				process.exit(1);
+			}
+			clientstate = READY;
+			//TODO: cancel timer
+			break;
 		case CLOSING:
-		//make sure its either ALIVE or GOODBYE
+			if (message.command != protocol.ALIVE) {
+				process.exit(1);
+			}
 	}
 });
 
