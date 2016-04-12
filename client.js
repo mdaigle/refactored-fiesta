@@ -5,18 +5,21 @@ const protocol = require('./protocol');
 const args = process.argv.slice(2);
 assert(args.length == 2);
 
-// Create a session id to use for all communications with the server.
-const SESSIONID = protocol.makeSessionId();
-console.log("New session with id %d", SESSIONID);
-
 // Create a socket to communicate with the server.
 const DGRAM = require('dgram');
 const SOCKET = DGRAM.createSocket('udp4');
 
+// Create a session id to use for all communications with the server.
+const SESSIONID = protocol.makeSessionId();
+console.log("New session with id %d", SESSIONID);
+
+// Sequence number, incremented for each message sent.
+var seq_num = 0;
+
 // Set a timeout of 20 seconds.
 //var timer = setTimeout(/*timeout callback*/, 20000)
 
-var message = protocol.newMessage(protocol.HELLO, 1, SESSIONID);
+var message = protocol.newMessage(protocol.HELLO, 0, SESSIONID);
 var buf = protocol.encodeMessage(message);
 
 // Client state constants.
@@ -29,17 +32,18 @@ const CLOSED = 4;
 var clientstate = -1;
 
 //Send initial HELLO message to server, then enter HELLOWAIT state
-/*SOCKET.send(msg, args[1], args[0], (err) => {
-	SOCKET.close();
-});*/
+SOCKET.send(buf, args[1], args[0], (err) => {
+	console.log("sent hello message")
+});
+
 clientstate = HELLOWAIT;
 
 // SOCKET EVENT BINDINGS
 // -------------------------------------------------------------------------- //
-SOCKET.on('message', (msg, rinfo) => {
+SOCKET.on('message', (buf, rinfo) => {
 	console.log('Received %d bytes from %s:%d\n', 
-		msg.length, rinfo.address, rinfo.port);
-	//processmessage(msg, rinfo);
+		buf.length, rinfo.address, rinfo.port);
+	var message = decodeMessage(buf, rinfo);
 	switch(clientstate) {
 		case HELLOWAIT:
 		//make sure its a HELLO message
