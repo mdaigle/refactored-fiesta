@@ -47,14 +47,14 @@ function encodeMessage(msg) {
 // Decodes a p0p message.
 module.exports.decodeMessage = decodeMessage;
 function decodeMessage(buf_arr) {
-	var buf = new Buffer(buf_aff);
+	var buf = new Buffer(buf_arr);
 	var msg = {
-		magic: buf.readUInt16BE(0);
-		version: buf.readUInt8(2);
-		command: buf.readUInt8(3);
-		sequence_number: buf.readUInt32BE(4);
-		session_id: buf.readUInt32BE(8);
-	}
+		magic: buf.readUInt16BE(0),
+		version: buf.readUInt8(2),
+		command: buf.readUInt8(3),
+		sequence_number: buf.readUInt32BE(4),
+		session_id: buf.readUInt32BE(8)
+	};
 	return msg;
 }
 
