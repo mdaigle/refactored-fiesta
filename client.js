@@ -26,31 +26,35 @@ const READYTIMER = 2;
 const CLOSING = 3;
 const CLOSED = 4;
 
-//Send initial HELLO message to server, then enter HELLOWAIT state
-SOCKET.send(buf, args[1], args[0]);
+var timer;
 
-timer = setTimeout(function() {
-	timeout("hello");
-}, 5000);
+//Send initial HELLO message to server, then enter HELLOWAIT state
+SOCKET.send(buf, args[1], args[0], () => {
+	clearTimeout(timer);
+	timer = setTimeout(function() {
+		timeout("hello");
+	}, 5000);
+});
 
 var clientstate = HELLOWAIT;
 
 // SOCKET EVENT BINDINGS
 // -------------------------------------------------------------------------- //
 SOCKET.on('message', (buf, rinfo) => {
-	console.log('Received %d bytes from %s:%d\n', 
-		buf.length, rinfo.address, rinfo.port);
+	/*console.log('Received %d bytes from %s:%d\n', 
+		buf.length, rinfo.address, rinfo.port);*/
 	var message = protocol.decodeMessage(buf, rinfo);
 
 	// Validate message
 	if (message.magic != protocol.MAGIC) {
-		console.log("magic value was bad", message.magic, protocol.MAGIC);
+		//console.log("magic value was bad", message.magic, protocol.MAGIC);
 		return;
 	}
 
 	// If the message is a GOODBYE, exit immediately, no matter the current 
 	// state
 	if (message.command == protocol.GOODBYE) {
+		console.log("server said goodbye");
 		SOCKET.close();
 		process.exit(0);
 	}
@@ -74,6 +78,7 @@ SOCKET.on('message', (buf, rinfo) => {
 			}
 			clearTimeout(timer);
 			clientstate = READY;
+			//console.log("received message in READYTIMER state");
 			break;
 		case CLOSING:
 			if (message.command != protocol.ALIVE) {
@@ -96,6 +101,8 @@ rl.on('line', (line) => {
 
 	if (line == "q") {
 		sendMsg(protocol.GOODBYE);
+		clientstate = CLOSING;
+		return;
 	}
 
 	while (line.length > protocol.MAX_DATA_SIZE) {
@@ -109,14 +116,20 @@ rl.on('line', (line) => {
 
 	if (clientstate == READY) {
 		clientstate = READYTIMER;
+		clearTimeout(timer);
 		timer = setTimeout(function() {
-			timeout();
+			timeout("waiting for alive");
 		}, 5000);
 	}
 });
 
 rl.on('close', () => {
 	sendMsg(protocol.GOODBYE);
+	clientstate = CLOSING;
+	clearTimeout(timer);
+	timer = setTimeout(function() {
+		timeout("waiting for goodbye");
+	}, 5000);
 });
 
 // payload must be less than or equal to protocol.MAX_DATA_SIZE bytes.
@@ -127,30 +140,27 @@ function sendMsg(command, payload) {
 	}
 	buf = protocol.encodeMessage(message);
 	SOCKET.send(buf, args[1], args[0]);
-
-	timer = setTimeout(function() {
-			timeout();
-		}, 5000);
-	clientstate = CLOSING;
 }
 
 // TIMER CALLBACK
 // -------------------------------------------------------------------------- //
-function timeout() {
-
+function timeout(src) {
+	//console.log("timeout from", src);
 	if (clientstate == CLOSING) {
 		SOCKET.close();
 		process.exit(1);
 	}
-
-	clientstate = CLOSING;
 	
 	message = protocol.newMessage(protocol.GOODBYE, seq_num++, SESSIONID);
+
+	clientstate = CLOSING;
+
 	buf = protocol.encodeMessage(message);
 	SOCKET.send(buf, args[1], args[0]);
 
+	clearTimeout(timer);
 	timer = setTimeout(function() {
-		timeout();
+		timeout("from timer, waiting for goodbye");
 	}, 5000);
 	return;
 }
