@@ -1,3 +1,5 @@
+const assert = require('assert');
+
 /*
 	a p0p message is a structure with fields magic (uint16), version (uint8), 
 	command (uint8), sequence number (uint32), session id (uint32), and data 
@@ -14,12 +16,15 @@ const GOODBYE = 3;
 const MAGIC = 50273; // 0xC461
 const VERSION = 1;
 
+const MAX_DATA_SIZE = 500;
+
 exports.HELLO = HELLO;
 exports.DATA = DATA;
 exports.ALIVE = ALIVE;
 exports.GOODBYE = GOODBYE;
 exports.MAGIC = MAGIC;
 exports.VERSION = VERSION;
+exports.MAX_DATA_SIZE = MAX_DATA_SIZE;
 
 module.exports.newMessage = newMessage;
 function newMessage(command_, sequence_number_, session_id_) {
@@ -45,9 +50,16 @@ function encodeMessage(msg) {
 	buf.writeUInt32BE(msg.sequence_number, 4);
 	buf.writeUInt32BE(msg.session_id, 8);
 
-	//TODO: Change hard-coded 12 to account for length of data
-	var trimmed = buf.slice(0, 12)
-	return buf;
+	var len = 12;
+
+	if (msg.hasOwnProperty('payload')) {
+		var payload_len = buf.write(msg.payload, 12);
+		assert(payload_len == msg.payload.length);
+		len += payload_len;
+	}
+
+	var trimmed = buf.slice(0, len);
+	return trimmed;
 }
 
 // Decodes a p0p message.

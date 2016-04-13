@@ -95,11 +95,17 @@ rl.on('line', (line) => {
 	}
 
 	if (line == "q") {
-		sendGoodbyeMsg();
+		sendMsg(protocol.GOODBYE);
 	}
 
-	//TODO: chunk line
-	//TODO: for each chunk, send DATA message
+	while (line.length > protocol.MAX_DATA_SIZE) {
+		var payload = line.substr(0, protocol.MAX_DATA_SIZE);
+		line = line.substring(protocol.MAX_DATA_SIZE);
+		sendMsg(protocol.DATA, payload);
+	}
+
+	// line now guaranteed to be an acceptable length
+	sendMsg(protocol.DATA, line);
 
 	if (clientstate == READY) {
 		clientstate = READYTIMER;
@@ -110,11 +116,15 @@ rl.on('line', (line) => {
 });
 
 rl.on('close', () => {
-	sendGoodbyeMsg();
+	sendMsg(protocol.GOODBYE);
 });
 
-function sendGoodbyeMsg() {
-	message = protocol.newMessage(protocol.GOODBYE, seq_num++, SESSIONID);
+// payload must be less than or equal to protocol.MAX_DATA_SIZE bytes.
+function sendMsg(command, payload) {
+	message = protocol.newMessage(command, seq_num++, SESSIONID);
+	if (payload != null) {
+		message.payload = payload;
+	}
 	buf = protocol.encodeMessage(message);
 	SOCKET.send(buf, args[1], args[0]);
 
