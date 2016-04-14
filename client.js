@@ -16,7 +16,7 @@ const SESSIONID = protocol.makeSessionId();
 // Sequence number, incremented for each message sent.
 var seq_num = 0;
 
-var message = protocol.newMessage(protocol.HELLO, 0, SESSIONID);
+var message = protocol.newMessage(protocol.HELLO, seq_num++, SESSIONID);
 var buf = protocol.encodeMessage(message);
 
 // Client state constants.
@@ -54,7 +54,6 @@ SOCKET.on('message', (buf, rinfo) => {
 	// If the message is a GOODBYE, exit immediately, no matter the current 
 	// state
 	if (message.command == protocol.GOODBYE) {
-		console.log("server said goodbye");
 		SOCKET.close();
 		process.exit(0);
 	}
@@ -102,6 +101,10 @@ rl.on('line', (line) => {
 	if (line == "q") {
 		sendMsg(protocol.GOODBYE);
 		clientstate = CLOSING;
+		clearTimeout(timer);
+		timer = setTimeout(function() {
+			timeout("waiting for goodbye");
+		}, 5000);
 		return;
 	}
 
