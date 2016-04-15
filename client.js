@@ -44,9 +44,6 @@ var timer;
 
 //Send initial HELLO message to server, then enter HELLOWAIT state
 SOCKET.send(buf, 0, buf.length, args[1], addr, (err) => {
-	if err != null {
-		console.log("send error")
-	}
 	clearTimeout(timer);
 	timer = setTimeout(function() {
 		timeout("hello");
