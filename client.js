@@ -10,7 +10,7 @@ var addr;
 dns.lookup(args[0], (err, address, family) => {
   if (err) { 
   	console.log("error resolving addr");
-  	process.exit(0); 
+  	process.exit(0);
   }
 
   addr = address;
@@ -29,9 +29,6 @@ const SESSIONID = protocol.makeSessionId();
 var client_seq_num = 0;
 var server_seq_num = -1;
 
-var message = protocol.newMessage(protocol.HELLO, client_seq_num++, SESSIONID);
-var buf = protocol.encodeMessage(message);
-
 // Client state constants.
 const HELLOWAIT = 0;
 const READY = 1;
@@ -42,12 +39,7 @@ const CLOSED = 4;
 var timer;
 
 //Send initial HELLO message to server, then enter HELLOWAIT state
-SOCKET.send(buf, 0, buf.length, args[1], addr, (err) => {
-	clearTimeout(timer);
-	timer = setTimeout(function() {
-		timeout("hello");
-	}, 5000);
-});
+sendMsg(protocol.HELLO);
 
 var clientstate = HELLOWAIT;
 
