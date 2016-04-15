@@ -26,9 +26,11 @@ const SESSIONID = protocol.makeSessionId();
 //console.log("New session with id %d", SESSIONID);
 
 // Sequence number, incremented for each message sent.
-var seq_num = 0;
+var client_seq_num = 0;
+var server_seq_num = -1;
 
-var message = protocol.newMessage(protocol.HELLO, seq_num++, SESSIONID);
+var message = protocol.newMessage(protocol.HELLO, client_seq_num++, SESSIONID);
+var server_seq_num = -1;
 var buf = protocol.encodeMessage(message);
 
 // Client state constants.
@@ -69,6 +71,19 @@ SOCKET.on('message', (buf, rinfo) => {
 		SOCKET.close();
 		process.exit(0);
 	}
+
+	if (message.sequence_number < server_seq_num) {
+		//protocol error
+		SOCKET.close();
+		process.exit(1);
+	}
+
+	if (message.sequence_number == server_seq_num) {
+		//duplicate message, discard
+		return;
+	}
+
+	server_seq_num = message.sequence_number;
 
 	switch(clientstate) {
 		case HELLOWAIT:
@@ -153,7 +168,8 @@ rl.on('close', () => {
 
 // payload must be less than or equal to protocol.MAX_DATA_SIZE bytes.
 function sendMsg(command, payload) {
-	message = protocol.newMessage(command, seq_num++, SESSIONID);
+	message = protocol.newMessage(command, client_seq_num++, SESSIONID);
+	var server_seq_num = -1;
 	if (payload != null) {
 		message.payload = payload;
 	}
@@ -170,7 +186,8 @@ function timeout(src) {
 		process.exit(1);
 	}
 	
-	message = protocol.newMessage(protocol.GOODBYE, seq_num++, SESSIONID);
+	message = protocol.newMessage(protocol.GOODBYE, client_seq_num++, SESSIONID);
+	var server_seq_num = -1;
 
 	clientstate = CLOSING;
 
