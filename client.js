@@ -36,12 +36,14 @@ const READYTIMER = 2;
 const CLOSING = 3;
 const CLOSED = 4;
 
-var timer;
-
 //Send initial HELLO message to server, then enter HELLOWAIT state
 sendMsg(protocol.HELLO);
 
 var clientstate = HELLOWAIT;
+
+var timer = setTimeout(function() {
+	timeout("waiting for hello");
+}, 5000);
 
 // SOCKET EVENT BINDINGS
 // -------------------------------------------------------------------------- //
