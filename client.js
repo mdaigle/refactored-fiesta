@@ -159,11 +159,11 @@ rl.on('close', () => {
 
 // payload must be less than or equal to protocol.MAX_DATA_SIZE bytes.
 function sendMsg(command, payload) {
-	message = protocol.newMessage(command, client_seq_num++, SESSIONID);
+	var message = protocol.newMessage(command, client_seq_num++, SESSIONID);
 	if (payload != null) {
 		message.payload = payload;
 	}
-	buf = protocol.encodeMessage(message);
+	var buf = protocol.encodeMessage(message);
 	SOCKET.send(buf, 0, buf.length, args[1], addr);
 }
 
