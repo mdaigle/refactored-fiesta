@@ -54,7 +54,7 @@ function encodeMessage(msg) {
 
 	if (msg.hasOwnProperty('payload')) {
 		var payload_len = buf.write(msg.payload, 12);
-		assert(payload_len == msg.payload.length);
+		//assert(payload_len == msg.payload.length);
 		len += payload_len;
 	}
 

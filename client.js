@@ -1,9 +1,21 @@
 const assert = require('assert');
 const protocol = require('./protocol');
+const dns = require('dns');
 
 // Strip process name and assert that we were passed enough arguments.
 const args = process.argv.slice(2);
 assert(args.length == 2);
+
+var addr;
+dns.lookup(args[0], (err, address, family) => {
+  if (err) { 
+  	console.log("error resolving addr");
+  	process.exit(0); 
+  }
+
+  addr = address;
+  console.log(addr);
+});
 
 // Create a socket to communicate with the server.
 const DGRAM = require('dgram');
@@ -29,7 +41,7 @@ const CLOSED = 4;
 var timer;
 
 //Send initial HELLO message to server, then enter HELLOWAIT state
-SOCKET.send(buf, args[1], args[0], () => {
+SOCKET.send(buf, args[1], addr, () => {
 	clearTimeout(timer);
 	timer = setTimeout(function() {
 		timeout("hello");
@@ -90,7 +102,11 @@ SOCKET.on('message', (buf, rinfo) => {
 // IO and IO EVENT BINDINGS
 // -------------------------------------------------------------------------- //
 const readline = require('readline');
-const rl = readline.createInterface(process.stdin, process.stdout);
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+  terminal: false
+});
 rl.pause();
 
 rl.on('line', (line) => {
@@ -142,7 +158,7 @@ function sendMsg(command, payload) {
 		message.payload = payload;
 	}
 	buf = protocol.encodeMessage(message);
-	SOCKET.send(buf, args[1], args[0]);
+	SOCKET.send(buf, args[1], addr);
 }
 
 // TIMER CALLBACK
@@ -159,7 +175,7 @@ function timeout(src) {
 	clientstate = CLOSING;
 
 	buf = protocol.encodeMessage(message);
-	SOCKET.send(buf, args[1], args[0]);
+	SOCKET.send(buf, args[1], addr);
 
 	clearTimeout(timer);
 	timer = setTimeout(function() {
