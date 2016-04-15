@@ -30,7 +30,6 @@ var client_seq_num = 0;
 var server_seq_num = -1;
 
 var message = protocol.newMessage(protocol.HELLO, client_seq_num++, SESSIONID);
-var server_seq_num = -1;
 var buf = protocol.encodeMessage(message);
 
 // Client state constants.
@@ -169,7 +168,6 @@ rl.on('close', () => {
 // payload must be less than or equal to protocol.MAX_DATA_SIZE bytes.
 function sendMsg(command, payload) {
 	message = protocol.newMessage(command, client_seq_num++, SESSIONID);
-	var server_seq_num = -1;
 	if (payload != null) {
 		message.payload = payload;
 	}
@@ -185,14 +183,9 @@ function timeout(src) {
 		SOCKET.close();
 		process.exit(1);
 	}
-	
-	message = protocol.newMessage(protocol.GOODBYE, client_seq_num++, SESSIONID);
-	var server_seq_num = -1;
 
+	sendMsg(protocol.GOODBYE, null);
 	clientstate = CLOSING;
-
-	buf = protocol.encodeMessage(message);
-	SOCKET.send(buf, args[1], addr);
 
 	clearTimeout(timer);
 	timer = setTimeout(function() {
