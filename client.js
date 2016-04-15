@@ -43,7 +43,10 @@ const CLOSED = 4;
 var timer;
 
 //Send initial HELLO message to server, then enter HELLOWAIT state
-SOCKET.send(buf, args[1], addr, () => {
+SOCKET.send(buf, 0, buf.length, args[1], addr, (err) => {
+	if err != null {
+		console.log("send error")
+	}
 	clearTimeout(timer);
 	timer = setTimeout(function() {
 		timeout("hello");
@@ -174,7 +177,7 @@ function sendMsg(command, payload) {
 		message.payload = payload;
 	}
 	buf = protocol.encodeMessage(message);
-	SOCKET.send(buf, args[1], addr);
+	SOCKET.send(buf, 0, buf.length, args[1], addr);
 }
 
 // TIMER CALLBACK
