@@ -37,7 +37,7 @@ const CLOSING = 3;
 const CLOSED = 4;
 
 //Send initial HELLO message to server, then enter HELLOWAIT state
-sendMsg(protocol.HELLO);
+sendMsg(protocol.HELLO, null);
 
 var clientstate = HELLOWAIT;
 
@@ -123,7 +123,7 @@ rl.on('line', (line) => {
 	}
 
 	if (line == "q") {
-		sendMsg(protocol.GOODBYE);
+		sendMsg(protocol.GOODBYE, null);
 		clientstate = CLOSING;
 		clearTimeout(timer);
 		timer = setTimeout(function() {
@@ -151,7 +151,7 @@ rl.on('line', (line) => {
 });
 
 rl.on('close', () => {
-	sendMsg(protocol.GOODBYE);
+	sendMsg(protocol.GOODBYE, null);
 	clientstate = CLOSING;
 	clearTimeout(timer);
 	timer = setTimeout(function() {
