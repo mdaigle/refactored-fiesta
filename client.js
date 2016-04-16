@@ -6,6 +6,8 @@ const dns = require('dns');
 const args = process.argv.slice(2);
 assert(args.length == 2);
 
+var clientstate = -1;
+
 var addr;
 dns.lookup(args[0], (err, address, family) => {
 	if (err) { 
@@ -18,7 +20,7 @@ dns.lookup(args[0], (err, address, family) => {
   //Send initial HELLO message to server, then enter HELLOWAIT state
 	sendMsg(protocol.HELLO, null);
 
-	var clientstate = HELLOWAIT;
+	clientstate = HELLOWAIT;
 
 	var timer = setTimeout(function() {
 		timeout("waiting for hello");
