@@ -8,13 +8,21 @@ assert(args.length == 2);
 
 var addr;
 dns.lookup(args[0], (err, address, family) => {
-  if (err) { 
-  	console.log("error resolving addr");
-  	process.exit(0);
-  }
+	if (err) { 
+		console.log("error resolving addr");
+		process.exit(0);
+	}
 
-  addr = address;
-  console.log(addr);
+	addr = address;
+
+  //Send initial HELLO message to server, then enter HELLOWAIT state
+	sendMsg(protocol.HELLO, null);
+
+	var clientstate = HELLOWAIT;
+
+	var timer = setTimeout(function() {
+		timeout("waiting for hello");
+	}, 5000);
 });
 
 // Create a socket to communicate with the server.
@@ -35,15 +43,6 @@ const READY = 1;
 const READYTIMER = 2;
 const CLOSING = 3;
 const CLOSED = 4;
-
-//Send initial HELLO message to server, then enter HELLOWAIT state
-sendMsg(protocol.HELLO, null);
-
-var clientstate = HELLOWAIT;
-
-var timer = setTimeout(function() {
-	timeout("waiting for hello");
-}, 5000);
 
 // SOCKET EVENT BINDINGS
 // -------------------------------------------------------------------------- //
