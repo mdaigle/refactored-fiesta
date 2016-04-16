@@ -7,6 +7,7 @@ const args = process.argv.slice(2);
 assert(args.length == 2);
 
 var clientstate = -1;
+var timer;
 
 var addr;
 dns.lookup(args[0], (err, address, family) => {
@@ -22,7 +23,7 @@ dns.lookup(args[0], (err, address, family) => {
 
 	clientstate = HELLOWAIT;
 
-	var timer = setTimeout(function() {
+	timer = setTimeout(function() {
 		timeout("waiting for hello");
 	}, 5000);
 });
