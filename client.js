@@ -1,6 +1,7 @@
 const assert = require('assert');
 const protocol = require('./protocol');
 const dns = require('dns');
+const tty = require('tty');
 
 // Strip process name and assert that we were passed enough arguments.
 const args = process.argv.slice(2);
@@ -124,7 +125,7 @@ rl.on('line', (line) => {
 		return;
 	}
 
-	if (line == "q") {
+	if (line == "q" && process.stdin.isTTY) {
 		sendMsg(protocol.GOODBYE, null);
 		clientstate = CLOSING;
 		clearTimeout(timer);
@@ -153,6 +154,7 @@ rl.on('line', (line) => {
 });
 
 rl.on('close', () => {
+	console.log("eof");
 	sendMsg(protocol.GOODBYE, null);
 	clientstate = CLOSING;
 	clearTimeout(timer);
